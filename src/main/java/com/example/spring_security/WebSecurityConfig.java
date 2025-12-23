@@ -2,6 +2,7 @@ package com.example.spring_security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -27,7 +28,9 @@ public class WebSecurityConfig {
                 // Define as regras de autorização baseadas na imagem
                 .authorizeHttpRequests(auth -> auth
                         // 1. Permite acesso total à raiz (home) e ao login sem senha
-                        .requestMatchers("/", "/login").permitAll()
+                        .requestMatchers("/").permitAll()
+                        .requestMatchers(HttpMethod.POST,"/login").permitAll()
+
 
                         // 2. Acesso apenas para quem tem o papel MANAGERS
                         .requestMatchers("/managers").hasRole("MANAGERS")
