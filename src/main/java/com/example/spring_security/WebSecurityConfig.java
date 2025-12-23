@@ -13,72 +13,58 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
-/**
- * Classe principal de configuração de segurança da aplicação
- */
-@Configuration // Indica que esta classe contém configurações do Spring
-@EnableWebSecurity // Ativa o Spring Security na aplicação
+@Configuration
+@EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
-// Permite usar anotações como @PreAuthorize e @PostAuthorize nos métodos
 public class WebSecurityConfig {
 
-    /**
-     * Define a cadeia de filtros de segurança (Security Filter Chain)
-     * Aqui configuramos como as requisições HTTP serão protegidas
-     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // Desabilita proteção CSRF (somente para estudo / APIs simples)
-                // Em aplicações web reais, o ideal é manter o CSRF ativado
+                // Desabilita CSRF para facilitar testes locais
                 .csrf(csrf -> csrf.disable())
 
-                // Define as regras de autorização
+                // Define as regras de autorização baseadas na imagem
                 .authorizeHttpRequests(auth -> auth
-                        // Todas as requisições precisam estar autenticadas
+                        // 1. Permite acesso total à raiz (home) e ao login sem senha
+                        .requestMatchers("/", "/login").permitAll()
+
+                        // 2. Acesso apenas para quem tem o papel MANAGERS
+                        .requestMatchers("/managers").hasRole("MANAGERS")
+
+                        // 3. Acesso para quem tem papel USERS ou MANAGERS
+                        .requestMatchers("/users").hasAnyRole("USERS", "MANAGERS")
+
+                        // 4. Qualquer outra rota não listada acima exige login
                         .anyRequest().authenticated()
                 )
 
-                // Habilita autenticação simples com formulário de login
-                // O Spring fornece uma página de login padrão
-                .formLogin();
+                // Habilita o formulário de login e permite que todos o vejam
+                .formLogin(form -> form.permitAll());
 
-        // Finaliza e constrói a configuração de segurança
         return http.build();
     }
 
-    /**
-     * Define os usuários da aplicação
-     * Aqui usamos usuários em memória (apenas para estudo)
-     */
     @Bean
     public UserDetailsService userDetailsService() {
-
-        // Usuário comum
+        // Criando usuário comum
         UserDetails user = User.withUsername("user")
-                // Senha em texto puro (não usar em produção)
                 .password("user123")
                 .roles("USERS")
                 .build();
 
-        // Usuário administrador
+        // Criando usuário administrador
         UserDetails admin = User.withUsername("admin")
-                // Senha em texto puro (não usar em produção)
                 .password("master123")
                 .roles("MANAGERS")
                 .build();
 
-        // Gerenciador de usuários em memória
         return new InMemoryUserDetailsManager(user, admin);
     }
 
-    /**
-     * Define o encoder de senha
-     * NoOpPasswordEncoder não aplica criptografia
-     * Usado apenas para estudo e testes
-     */
     @Bean
     public PasswordEncoder passwordEncoder() {
+        // NoOpPasswordEncoder: não criptografa a senha (apenas para estudo)
         return NoOpPasswordEncoder.getInstance();
     }
 }
